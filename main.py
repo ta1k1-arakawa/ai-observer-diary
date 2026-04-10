@@ -121,7 +121,8 @@ def build_prompt(current_day, address, character, knowledge, emotional_log, past
 
 ## 出力指示
 
-以下の3つのセクションを、この順番で出力してください。
+必ず以下の3つのセクションすべてを、指定された見出しの順番通りに完全に出力してください。
+日記を書き終えた後も、絶対に途中で出力を打ち切らず、セクション3まで書き切ってください。
 Markdownで、余分なテキスト（「```markdown」等）は省き、直接見出しから始めてください。
 
 ### セクション1: 本日の観察日記
@@ -189,7 +190,7 @@ def generate_diary(prompt):
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
     try:
         response = client.messages.create(
-            model="claude-sonnet-4-6-20250514",
+            model="claude-sonnet-4-5-20250929",
             max_tokens=4096,
             temperature=0.6,
             messages=[{"role": "user", "content": prompt}],
