@@ -254,7 +254,7 @@ def main():
     write_file(log_filepath, diary)
     logging.info(f"Saved observation log to {log_filepath}")
 
-    # 知識記録を追記
+    # 法則を追記
     if new_laws and "特になし" not in new_laws:
         header = f"\n\n### Day {current_day}（{address}）\n"
         append_file(KNOWLEDGE_FILE, header + new_laws + "\n")
