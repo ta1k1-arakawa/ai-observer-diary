@@ -126,7 +126,7 @@ def build_prompt(current_day, address, character, knowledge, emotional_log, past
 Markdownで、余分なテキスト（「```markdown」等）は省き、直接見出しから始めてください。
 
 ### セクション1: 本日の観察日記
-`# Day {current_day}: 観察記録` から書き始めてください。
+`# Day {current_day}: 観察記録（{address}）` から書き始めてください。
 
 注意点：
 - 過去の日記で登場した場所・人物・出来事に関連があれば、必ず言及すること
