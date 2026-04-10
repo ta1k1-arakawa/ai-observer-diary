@@ -18,7 +18,7 @@ MEMORY_DIR = BASE_DIR / "memory"
 DAILY_LOG_DIR = MEMORY_DIR / "daily_log"
 CHARACTER_FILE = MEMORY_DIR / "character.md"
 KNOWLEDGE_FILE = MEMORY_DIR / "knowledge.md"
-EMOTIONAL_LOG_FILE = MEMORY_DIR / "emotional_log.md"
+EMOTIONAL_FILE = MEMORY_DIR / "emotional.md"
 
 
 def get_random_tokyo_location():
@@ -81,9 +81,11 @@ def get_current_day():
 
 
 def load_all_past_diaries(current_day):
-    """過去の日記を全件読み込んで連結する"""
+    """過去の日記を全件読み込んで連結する(直近7日間が最大)"""
     entries = []
-    for d in range(1, current_day):
+    start_day = max(1, current_day - 7) #直近7日間
+
+    for d in range(start_day, current_day):
         f = DAILY_LOG_DIR / f"day{d}.md"
         if f.exists():
             entries.append(read_file(f))
@@ -93,9 +95,9 @@ def load_all_past_diaries(current_day):
 def build_prompt(current_day, address, character, knowledge, emotional_log, past_diaries):
     """メインプロンプトを構築する"""
     return f"""あなたは以下のキャラクター設定に**完全に**従って日記を書きます。
-設定から逸脱しないでください。特に「成長の曲線」と「絶対に守るルール」を厳守してください。
+    設定から逸脱しないでください。特に「成長の曲線」と「絶対に守るルール」を厳守してください。
 
-{character}
+    {character}
 
 ---
 
@@ -210,15 +212,19 @@ def main():
         return
 
     knowledge = read_file(KNOWLEDGE_FILE)
-    emotional_log = read_file(EMOTIONAL_LOG_FILE)
+    if not knowledge:
+        logging.error("knowledge.md が存在しません。終了します。")
+        return
+
+    emotional = read_file(EMOTIONAL_FILE)
+    if not emotional:
+        logging.error("character.md が存在しません。終了します。")
+        return
+
 
     # 現在の日を計算
     current_day, _ = get_current_day()
     logging.info(f"Executing for Day: {current_day}")
-
-    if current_day > 7:
-        logging.info("7日間の観測任務は完了しています。")
-        return
 
     # 過去の全日記を読み込み
     past_diaries = load_all_past_diaries(current_day)
@@ -228,7 +234,7 @@ def main():
 
     # プロンプト構築
     prompt = build_prompt(
-        current_day, address, character, knowledge, emotional_log, past_diaries
+        current_day, address, character, knowledge, emotional, past_diaries
     )
 
     # 生成
@@ -256,7 +262,7 @@ def main():
     # 内面記録を追記
     if emotional:
         header = f"\n\n### Day {current_day}\n"
-        append_file(EMOTIONAL_LOG_FILE, header + emotional + "\n")
+        append_file(EMOTIONAL_FILE, header + emotional + "\n")
         logging.info("Updated emotional_log.md.")
 
     logging.info(f"--- Day {current_day} Complete ---")
