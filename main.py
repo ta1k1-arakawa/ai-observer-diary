@@ -95,14 +95,14 @@ def load_all_past_diaries(current_day):
 def build_prompt(current_day, address, character, knowledge, emotional_log, past_diaries):
     """メインプロンプトを構築する"""
     return f"""あなたは以下のキャラクター設定に**完全に**従って日記を書きます。
-    設定から逸脱しないでください。特に「成長の曲線」と「絶対に守るルール」を厳守してください。
+    設定から逸脱しないでください。特に「成長のフェーズ」と「絶対に守るルール」を厳守してください。
 
     {character}
 
 ---
 
 ## 本日の情報
-- **Day {current_day} / 7**（観測任務は全7日間）
+- **Day {current_day}**
 - **観測地点**: {address}
 
 ---
@@ -119,33 +119,52 @@ def build_prompt(current_day, address, character, knowledge, emotional_log, past
 
 ---
 
+## フェーズ判定指示
+
+日記を書く前に、まず「観測者の内面記録」をすべて読み返してください。
+そして、キャラクター設定の「成長のフェーズ」に照らし合わせ、今のノアがどのフェーズにいるかを判断してください。
+判断の根拠（どの内面記録のどの部分が、どのフェーズの特徴に該当するか）を明確にしてください。
+フェーズは必ず前回と同じか、一つだけ進むかのどちらかです。一度に二つ以上進むことはありません。
+
+---
+
 ## 出力指示
 
-必ず以下の3つのセクションすべてを、指定された見出しの順番通りに完全に出力してください。
-日記を書き終えた後も、絶対に途中で出力を打ち切らず、セクション3まで書き切ってください。
+必ず以下の4つのセクションすべてを、指定された見出しの順番通りに完全に出力してください。
+日記を書き終えた後も、絶対に途中で出力を打ち切らず、セクション4まで書き切ってください。
 Markdownで、余分なテキスト（「```markdown」等）は省き、直接見出しから始めてください。
 
-### セクション1: 本日の観察日記
+### セクション1: フェーズ判定
+`## フェーズ判定` から書き始めてください。
+
+以下を記録してください：
+- **現在のフェーズ**: Phase X: フェーズ名
+- **判定根拠**: 内面記録のどの蓄積から、このフェーズにいると判断したか（2〜3行）
+- **次のフェーズへの距離**: 次のフェーズの兆候がどの程度現れているか（まだ遠い／兆候が見え始めている／もう間もなく）
+
+### セクション2: 本日の観察日記
 `# Day {current_day}: 観察記録（{address}）` から書き始めてください。
 
 注意点：
 - 過去の日記で登場した場所・人物・出来事に関連があれば、必ず言及すること
-- 「成長の曲線」に沿った内面の変化を、描写の端々に滲ませること
+- 現在のフェーズにふさわしい内面の変化を、描写の端々に滲ませること
 - 過去に立てた「人間の法則」に関連する場面があれば、その法則を引用し、確認・修正・深化させること
-- Day {current_day} にふさわしい観測者の距離感で書くこと
+- 現在のフェーズにふさわしい観測者の距離感で書くこと
+- 季節の描写を自然に織り込むこと
 - 400字程度で書くこと
 
-### セクション2: 新しく学んだ／修正した人間の法則
+### セクション3: 新しく学んだ／修正した人間の法則
 `## 新しく学んだ人間の法則` から書き始めてください。
 
 - 新しい法則には `[Day {current_day} 新規]` のラベルをつけること
 - 過去の法則を修正する場合は `[Day {current_day} 修正: 元はDay X]` のラベルをつけ、何がどう変わったか書くこと
 - 該当なしの場合は「特になし」と書くこと
 
-### セクション3: 観測者の内面変化
+### セクション4: 観測者の内面変化
 `## 内面記録` から書き始めてください。
 
 以下を簡潔に（各1〜3行で）記録してください：
+- **現在のフェーズ**: Phase X: フェーズ名
 - **本日の核心的感覚**: 今日の観測で最も強く残った感覚を、感情語を使わず身体感覚や比喩で
 - **気になった存在**: 特に目が離せなかった人間や光景（いれば）
 - **自問**: 今日の観測を経て生まれた、自分自身への問い
@@ -153,14 +172,28 @@ Markdownで、余分なテキスト（「```markdown」等）は省き、直接�
 
 
 def parse_output(result):
-    """Claude の出力を3セクションに分割する"""
+    """Claude の出力を4セクションに分割する（フェーズ判定、日記、法則、内面記録）"""
+    phase = ""
     diary = result
     new_laws = ""
     emotional = ""
 
+    # フェーズ判定セクションの分割
+    if "## フェーズ判定" in result:
+        parts = result.split("## フェーズ判定", 1)
+        remainder = parts[1]
+        # 日記セクション（"# Day"）で分割
+        if "# Day" in remainder:
+            phase_parts = remainder.split("# Day", 1)
+            phase = phase_parts[0].strip()
+            diary = "# Day" + phase_parts[1]
+        else:
+            phase = remainder.strip()
+            diary = ""
+
     # 法則セクションの分割
-    if "## 新しく学んだ人間の法則" in result:
-        parts = result.split("## 新しく学んだ人間の法則", 1)
+    if "## 新しく学んだ人間の法則" in diary:
+        parts = diary.split("## 新しく学んだ人間の法則", 1)
         diary = parts[0].strip()
         remainder = parts[1]
     else:
@@ -178,7 +211,7 @@ def parse_output(result):
     else:
         new_laws = remainder.strip()
 
-    return diary, new_laws, emotional
+    return phase, diary, new_laws, emotional
 
 
 def generate_diary(prompt):
@@ -247,7 +280,9 @@ def main():
         return
 
     # 出力をパース
-    diary, new_laws, emotional = parse_output(result)
+    phase, diary, new_laws, emotional = parse_output(result)
+    if phase:
+        logging.info(f"Phase assessment:\n{phase}")
 
     # 日記を保存
     log_filepath = DAILY_LOG_DIR / f"day{current_day}.md"
