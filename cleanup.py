@@ -8,6 +8,7 @@ MEMORY_DIR = BASE_DIR / "memory"
 DAILY_LOG_DIR = MEMORY_DIR / "daily_log"
 KNOWLEDGE_FILE = MEMORY_DIR / "knowledge.md"
 EMOTIONAL_FILE = MEMORY_DIR / "emotional.md"
+LOCATIONS_FILE = MEMORY_DIR / "locations.json"
 
 KNOWLEDGE_INITIAL = """\
 # 蓄積された人間の法則
@@ -42,6 +43,10 @@ def main():
     # emotional.md を初期状態に戻す
     EMOTIONAL_FILE.write_text(EMOTIONAL_INITIAL, encoding="utf-8")
     print("emotional.md: 初期状態に戻しました")
+
+    # locations.json を初期状態に戻す
+    LOCATIONS_FILE.write_text("[]", encoding="utf-8")
+    print("locations.json: 初期状態に戻しました")
 
     print("クリーンアップ完了!")
 
